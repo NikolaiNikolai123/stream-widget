@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>City / Country widget</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent; /* прозрачный фон для OBS */
+    overflow: hidden;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  #wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+    flex-direction: column;
+  }
+
+  #city {
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  }
+
+  #divider {
+    width: 32px;
+    height: 1px;
+    background: rgba(255,255,255,0.55);
+    margin: 18px auto;
+  }
+
+  #country {
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+  }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <div id="city"></div>
+  <div id="divider"></div>
+  <div id="country"></div>
+</div>
+
+<script>
+/* ======================================================
+   РЕДАКТИРУЙТЕ СПИСОК ГОРОДОВ ЗДЕСЬ.
+   Добавляйте / удаляйте / меняйте строки — сколько угодно.
+====================================================== */
+const data = [
+  { city: "Bangkok",     country: "Thailand" },
+  { city: "Pattaya",     country: "Thailand" },
+  { city: "Chiang Mai",  country: "Thailand" },
+  { city: "Phuket",      country: "Thailand" }
+];
+
+/* Через сколько миллисекунд менять надпись (по умолчанию 4200 = 4.2 сек) */
+const intervalMs = 4200;
+
+/* ====================================================== */
+
+const wrap = document.getElementById("wrap");
+const cityEl = document.getElementById("city");
+const countryEl = document.getElementById("country");
+let i = 0;
+
+function render(index) {
+  cityEl.textContent = data[index].city;
+  countryEl.textContent = data[index].country;
+}
+
+function showNext() {
+  wrap.style.opacity = "0";
+  wrap.style.transform = "translateY(8px)";
+  setTimeout(() => {
+    i = (i + 1) % data.length;
+    render(i);
+    wrap.style.opacity = "1";
+    wrap.style.transform = "translateY(0)";
+  }, 900);
+}
+
+render(i);
+setTimeout(() => {
+  wrap.style.opacity = "1";
+  wrap.style.transform = "translateY(0)";
+}, 200);
+
+setInterval(showNext, intervalMs);
+</script>
+
+</body>
+</html>
