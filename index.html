@@ -9,7 +9,7 @@
     padding: 0;
     width: 100%;
     height: 100%;
-    background: transparent; /* прозрачный фон для OBS */
+    background: transparent;
     overflow: hidden;
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
@@ -21,10 +21,23 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 1.2s ease, transform 1.2s ease;
     flex-direction: column;
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(1.08);
+    transition: opacity 1.1s ease, filter 1.1s ease, transform 1.1s ease;
+  }
+
+  #wrap.visible {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
+
+  #wrap.leaving {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(0.94);
   }
 
   #city {
@@ -61,20 +74,63 @@
 
 <script>
 /* ======================================================
-   РЕДАКТИРУЙТЕ СПИСОК ГОРОДОВ ЗДЕСЬ.
-   Добавляйте / удаляйте / меняйте строки — сколько угодно.
-====================================================== */
-const data = [
-  { city: "Bangkok",     country: "Thailand" },
-  { city: "Pattaya",     country: "Thailand" },
-  { city: "Chiang Mai",  country: "Thailand" },
-  { city: "Phuket",      country: "Thailand" }
-];
+   НАСТРОЙКА ЧЕРЕЗ ССЫЛКУ (без правки файла).
 
-/* Через сколько миллисекунд менять надпись (по умолчанию 4200 = 4.2 сек) */
-const intervalMs = 4200;
+   Формат ссылки:
+   https://.../city-country-widget.html?places=Город:Страна|Город:Страна&interval=4200
+
+   Пример:
+   https://.../city-country-widget.html?places=Bangkok:Thailand|Pattaya:Thailand|Phuket:Thailand&interval=5000
+
+   places  — список "Город:Страна", разделённых символом |
+   interval — время показа каждой надписи в мс (необязательно, по умолчанию 4200)
+   pause   — пауза между исчезновением и появлением следующей надписи, в мс
+             (необязательно, по умолчанию 900)
+
+   Пример с длинной паузой:
+   ...html?places=Bangkok:Thailand|Phuket:Thailand&interval=5000&pause=2000
+
+   Если параметр places не указан — используется список по умолчанию ниже.
+====================================================== */
+const defaultData = [
+  { city: "Pattaya", country: "Thailand" }
+];
+const defaultIntervalMs = 6000;
+const defaultPauseMs = 2000;
 
 /* ====================================================== */
+
+function parseParams() {
+  const params = new URLSearchParams(window.location.search);
+  const placesRaw = params.get("places");
+  const intervalRaw = params.get("interval");
+
+  let data = defaultData;
+  if (placesRaw) {
+    const parsed = placesRaw.split("|").map(pair => {
+      const [city, country] = pair.split(":");
+      return { city: (city || "").trim(), country: (country || "").trim() };
+    }).filter(p => p.city);
+    if (parsed.length > 0) data = parsed;
+  }
+
+  let intervalMs = defaultIntervalMs;
+  const parsedInterval = parseInt(intervalRaw, 10);
+  if (!isNaN(parsedInterval) && parsedInterval > 500) {
+    intervalMs = parsedInterval;
+  }
+
+  const pauseRaw = params.get("pause");
+  let pauseMs = defaultPauseMs;
+  const parsedPause = parseInt(pauseRaw, 10);
+  if (!isNaN(parsedPause) && parsedPause >= 0) {
+    pauseMs = parsedPause;
+  }
+
+  return { data, intervalMs, pauseMs };
+}
+
+const { data, intervalMs, pauseMs } = parseParams();
 
 const wrap = document.getElementById("wrap");
 const cityEl = document.getElementById("city");
@@ -87,23 +143,25 @@ function render(index) {
 }
 
 function showNext() {
-  wrap.style.opacity = "0";
-  wrap.style.transform = "translateY(8px)";
+  wrap.classList.remove("visible");
+  wrap.classList.add("leaving");
   setTimeout(() => {
     i = (i + 1) % data.length;
     render(i);
-    wrap.style.opacity = "1";
-    wrap.style.transform = "translateY(0)";
-  }, 900);
+    wrap.classList.remove("leaving");
+    void wrap.offsetWidth;
+    wrap.classList.add("visible");
+  }, pauseMs);
 }
 
 render(i);
 setTimeout(() => {
-  wrap.style.opacity = "1";
-  wrap.style.transform = "translateY(0)";
+  wrap.classList.add("visible");
 }, 200);
 
-setInterval(showNext, intervalMs);
+if (data.length >= 1) {
+  setInterval(showNext, intervalMs);
+}
 </script>
 
 </body>
