@@ -22,22 +22,13 @@
     justify-content: center;
     text-align: center;
     flex-direction: column;
-    opacity: 0;
-    filter: blur(6px);
-    transform: scale(1.08);
-    transition: opacity 1.1s ease, filter 1.1s ease, transform 1.1s ease;
   }
 
-  #wrap.visible {
-    opacity: 1;
-    filter: blur(0px);
-    transform: scale(1);
-  }
-
-  #wrap.leaving {
-    opacity: 0;
-    filter: blur(6px);
-    transform: scale(0.94);
+  #cityMask {
+    height: 170px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
   }
 
   #city {
@@ -46,13 +37,42 @@
     letter-spacing: 0.02em;
     color: #ffffff;
     text-shadow: 0 6px 36px rgba(0,0,0,0.35);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transition: transform 0.8s cubic-bezier(0.6,0,0.2,1), opacity 0.8s ease;
+  }
+
+  #city.exit {
+    transform: translateY(100%);
+    opacity: 0.3;
+  }
+
+  #city.enter-start {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  #city.settled {
+    transform: translateY(0);
+    opacity: 1;
   }
 
   #divider {
     width: 96px;
     height: 3px;
     background: rgba(255,255,255,0.55);
-    margin: 54px auto;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+
+  #countryMask {
+    height: 70px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    margin-top: 24px;
   }
 
   #country {
@@ -61,15 +81,35 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.75);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transition: transform 0.8s cubic-bezier(0.6,0,0.2,1), opacity 0.8s ease;
+  }
+
+  #country.exit {
+    transform: translateY(-100%);
+    opacity: 0.3;
+  }
+
+  #country.enter-start {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  #country.settled {
+    transform: translateY(0);
+    opacity: 1;
   }
 </style>
 </head>
 <body>
 
 <div id="wrap">
-  <div id="city"></div>
+  <div id="cityMask"><div id="city"></div></div>
   <div id="divider"></div>
-  <div id="country"></div>
+  <div id="countryMask"><div id="country"></div></div>
 </div>
 
 <script>
@@ -91,12 +131,14 @@
    ...html?places=Bangkok:Thailand|Phuket:Thailand&interval=5000&pause=2000
 
    Если параметр places не указан — используется список по умолчанию ниже.
+   ВАЖНО: список по умолчанию — один город (Pattaya, Thailand). Даже с одним
+   городом анимация продолжает циклично проигрываться (уход/появление).
 ====================================================== */
 const defaultData = [
   { city: "Pattaya", country: "Thailand" }
 ];
 const defaultIntervalMs = 6000;
-const defaultPauseMs = 2000;
+const defaultPauseMs = 1200;
 
 /* ====================================================== */
 
@@ -132,7 +174,6 @@ function parseParams() {
 
 const { data, intervalMs, pauseMs } = parseParams();
 
-const wrap = document.getElementById("wrap");
 const cityEl = document.getElementById("city");
 const countryEl = document.getElementById("country");
 let i = 0;
@@ -143,25 +184,36 @@ function render(index) {
 }
 
 function showNext() {
-  wrap.classList.remove("visible");
-  wrap.classList.add("leaving");
+  cityEl.classList.remove("settled");
+  cityEl.classList.add("exit");
+  countryEl.classList.remove("settled");
+  countryEl.classList.add("exit");
+
   setTimeout(() => {
     i = (i + 1) % data.length;
     render(i);
-    wrap.classList.remove("leaving");
-    void wrap.offsetWidth;
-    wrap.classList.add("visible");
+
+    cityEl.classList.remove("exit");
+    cityEl.classList.add("enter-start");
+    countryEl.classList.remove("exit");
+    countryEl.classList.add("enter-start");
+
+    void cityEl.offsetWidth;
+
+    cityEl.classList.remove("enter-start");
+    cityEl.classList.add("settled");
+    countryEl.classList.remove("enter-start");
+    countryEl.classList.add("settled");
   }, pauseMs);
 }
 
 render(i);
 setTimeout(() => {
-  wrap.classList.add("visible");
+  cityEl.classList.add("settled");
+  countryEl.classList.add("settled");
 }, 200);
 
-if (data.length >= 1) {
-  setInterval(showNext, intervalMs);
-}
+setInterval(showNext, intervalMs);
 </script>
 
 </body>
